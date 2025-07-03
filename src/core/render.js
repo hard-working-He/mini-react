@@ -93,55 +93,5 @@ function updateDOMProperties(dom, oldProps, newProps) {
 // 下一个工作单元
 let nextUnitOfWork = null;
 
-/**
- * 执行工作单元
- * @param {Object} fiber - 当前 fiber 节点
- * @returns {Object} 下一个工作单元
- */
-function performUnitOfWork(fiber) {
-  // 如果没有 DOM 节点，创建一个
-  if (!fiber.dom) {
-    fiber.dom = createDOMElement(fiber);
-  }
-
-  // 如果有父节点，将 DOM 添加到父节点
-  if (fiber.parent) {
-    fiber.parent.dom.appendChild(fiber.dom);
-  }
-
-  // 为子元素创建新的 fiber
-  const elements = fiber.props.children;
-  let prevSibling = null;
-
-  elements.forEach((element, index) => {
-    const newFiber = {
-      type: element.type,
-      props: element.props,
-      parent: fiber,
-      dom: null,
-    };
-
-    // 设置子节点关系
-    if (index === 0) {
-      fiber.child = newFiber;
-    } else {
-      prevSibling.sibling = newFiber;
-    }
-    prevSibling = newFiber;
-  });
-
-  // 返回下一个工作单元
-  if (fiber.child) {
-    return fiber.child;
-  }
-  let nextFiber = fiber;
-  while (nextFiber) {
-    if (nextFiber.sibling) {
-      return nextFiber.sibling;
-    }
-    nextFiber = nextFiber.parent;
-  }
-}
-
 // 导出函数
 export { render, createDOMElement, updateDOMProperties };

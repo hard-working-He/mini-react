@@ -30,8 +30,7 @@ mini-react/
 
 ### 1. Virtual DOM
 - 实现 `createElement` 函数
-- JSX 转换支持
-- 虚拟 DOM 树的构建
+- 虚拟 DOM 树的构建 `render`
 
 Fiber 架构相关函数：
 createFiber(vdom, returnFiber) - 创建 Fiber 节点
