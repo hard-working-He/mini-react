@@ -1,38 +1,9 @@
-# Virtual DOM 开发记录
+# Virtual DOM 实现指南
 
-## 1. 概述
+## 1. createElement 实现
+createElement 是构建虚拟 DOM 的基础，它将 JSX 转换为 JavaScript 对象。
 
-Virtual DOM（虚拟 DOM）是 React 的核心概念之一，它是一个用 JavaScript 对象来表示真实 DOM 的轻量级抽象层。通过虚拟 DOM，我们可以以声明式的方式描述 UI，并让框架高效地处理实际的 DOM 操作。
-
-## 2. 核心概念
-
-### 2.1 虚拟 DOM 节点结构
-
-```javascript
-{
-  type: string | function,  // 元素类型（标签名或组件函数）
-  props: {                  // 属性对象
-    children: Array,        // 子节点数组
-    ...otherProps          // 其他属性
-  }
-}
-```
-
-### 2.2 工作流程
-
-1. **创建**: 通过 `createElement` 函数创建虚拟 DOM 节点
-2. **对比**: 通过 diff 算法比较新旧虚拟 DOM 树的差异
-3. **更新**: 将差异应用到实际 DOM 上
-
-## 3. 实现步骤
-
-### 3.1 createElement 函数
-
-`createElement` 是创建虚拟 DOM 的核心函数，它接收三个参数：
-- type: 元素类型
-- props: 属性对象
-- children: 子元素
-
+### 1.1 基本结构
 ```javascript
 function createElement(type, props, ...children) {
   return {
@@ -45,13 +16,7 @@ function createElement(type, props, ...children) {
     }
   }
 }
-```
 
-### 3.2 文本节点处理
-
-为了统一处理，我们将文本内容也转换为虚拟 DOM 节点：
-
-```javascript
 function createTextElement(text) {
   return {
     type: 'TEXT_ELEMENT',
@@ -63,75 +28,167 @@ function createTextElement(text) {
 }
 ```
 
-## 4. 优化策略
+### 1.2 工作原理
+1. **参数说明**
+   - type: 元素类型（如 'div', 'span' 等）
+   - props: 元素属性（如 className, style 等）
+   - children: 子元素数组
 
-### 4.1 批量更新
+2. **处理流程**
+   - 处理基本属性
+   - 转换文本节点为虚拟 DOM 节点
+   - 递归处理子节点
 
-- 收集多次状态更新
-- 在一次渲染周期内统一处理
-- 减少不必要的 DOM 操作
-
-### 4.2 懒渲染
-
-- 采用深度优先的遍历策略
-- 支持渲染中断和恢复
-- 优先处理高优先级的更新
-
-## 5. 注意事项
-
-1. 保持虚拟 DOM 结构的不可变性
-2. 合理处理事件绑定
-3. 注意内存管理，避免内存泄漏
-4. 处理好特殊属性（如 style、className 等）
-
-## 6. 测试用例
-
+3. **使用示例**
 ```javascript
-// 创建简单元素
-const element = createElement('div', { id: 'test' },
-  createElement('span', null, 'Hello'),
-  createElement('span', null, 'World')
-)
+// JSX
+<div className="container">
+  <h1>标题</h1>
+  <p>内容</p>
+</div>
 
-// 预期输出
+// 转换后的虚拟 DOM
+createElement('div', { className: 'container' },
+  createElement('h1', null, '标题'),
+  createElement('p', null, '内容')
+)
+```
+
+## 2. Fiber Render 实现
+Fiber 是 React 的新一代渲染架构，实现了可中断的渲染过程。
+
+### 2.1 Fiber 节点结构
+```javascript
 {
-  type: 'div',
-  props: {
-    id: 'test',
-    children: [
-      {
-        type: 'span',
-        props: {
-          children: [{
-            type: 'TEXT_ELEMENT',
-            props: { nodeValue: 'Hello', children: [] }
-          }]
-        }
-      },
-      {
-        type: 'span',
-        props: {
-          children: [{
-            type: 'TEXT_ELEMENT',
-            props: { nodeValue: 'World', children: [] }
-          }]
-        }
-      }
-    ]
+  type: 'div',           // DOM 节点类型
+  dom: domElement,       // 真实 DOM 节点
+  props: {              // 节点属性
+    children: []        // 子节点
+  },
+  parent: parentFiber,  // 父 Fiber 节点
+  child: childFiber,    // 第一个子 Fiber 节点
+  sibling: nextFiber,   // 下一个兄弟 Fiber 节点
+}
+```
+
+### 2.2 渲染流程
+1. **初始化渲染**
+```javascript
+function render(element, container) {
+  // 创建根 Fiber 节点
+  nextUnitOfWork = {
+    dom: container,
+    props: {
+      children: [element]
+    }
   }
 }
 ```
 
-## 7. 后续优化方向
+2. **工作循环**
+```javascript
+function workLoop(deadline) {
+  let shouldYield = false;
+  while (nextUnitOfWork && !shouldYield) {
+    nextUnitOfWork = performUnitOfWork(nextUnitOfWork);
+    shouldYield = deadline.timeRemaining() < 1;
+  }
+  requestIdleCallback(workLoop);
+}
+```
 
-1. 实现组件生命周期
-2. 添加事件系统
-3. 优化 diff 算法
-4. 实现异步渲染
-5. 添加错误边界处理
+3. **处理工作单元**
+```javascript
+function performUnitOfWork(fiber) {
+  // 1. 创建 DOM 节点
+  if (!fiber.dom) {
+    fiber.dom = createDOMElement(fiber);
+  }
 
-## 8. 参考资源
+  // 2. 创建新的 Fiber 节点
+  const elements = fiber.props.children;
+  let prevSibling = null;
 
-- [React 官方文档](https://reactjs.org/docs/implementation-notes.html)
+  elements.forEach((element, index) => {
+    const newFiber = {
+      type: element.type,
+      props: element.props,
+      parent: fiber,
+      dom: null
+    };
+
+    if (index === 0) {
+      fiber.child = newFiber;
+    } else {
+      prevSibling.sibling = newFiber;
+    }
+    prevSibling = newFiber;
+  });
+
+  // 3. 返回下一个工作单元
+  if (fiber.child) {
+    return fiber.child;
+  }
+  let nextFiber = fiber;
+  while (nextFiber) {
+    if (nextFiber.sibling) {
+      return nextFiber.sibling;
+    }
+    nextFiber = nextFiber.parent;
+  }
+}
+```
+
+### 2.3 Fiber 架构优势
+1. **可中断渲染**
+   - 将渲染工作分解为小单元
+   - 可以暂停和恢复渲染
+   - 不会阻塞主线程
+
+2. **优先级控制**
+   - 可以设置任务优先级
+   - 高优先级任务可以打断低优先级任务
+   - 提供更好的用户体验
+
+3. **增量渲染**
+   - 逐步构建 DOM 树
+   - 支持时间切片
+   - 平滑处理大量更新
+
+## 3. 示例：完整渲染流程
+
+```javascript
+// 1. 创建虚拟 DOM
+const element = createElement('div', { className: 'container' },
+  createElement('h1', null, 'Hello'),
+  createElement('p', null, 'World')
+);
+
+// 2. 开始渲染
+render(element, document.getElementById('root'));
+
+// 3. 启动工作循环
+requestIdleCallback(workLoop);
+```
+
+## 4. 最佳实践
+
+1. **性能优化**
+   - 使用 key 属性优化列表更新
+   - 避免不必要的渲染
+   - 合理使用批量更新
+
+2. **代码组织**
+   - 保持组件的纯函数特性
+   - 合理拆分组件
+   - 使用合适的状态管理
+
+3. **调试技巧**
+   - 使用 React DevTools
+   - 添加适当的日志
+   - 理解 Fiber 树结构
+
+## 5. 参考资源
+- [React Fiber 架构](https://github.com/acdlite/react-fiber-architecture)
 - [Build your own React](https://pomb.us/build-your-own-react/)
-- [Virtual DOM 算法解析](https://github.com/livoras/blog/issues/13)
+- [React 官方文档](https://reactjs.org/docs/implementation-notes.html)

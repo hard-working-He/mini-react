@@ -33,20 +33,20 @@ mini-react/
 - JSX 转换支持
 - 虚拟 DOM 树的构建
 
-### 2. Fiber 架构
-- Fiber 节点结构
-- 工作单元（Work Unit）
-- 双缓存树
+Fiber 架构相关函数：
+createFiber(vdom, returnFiber) - 创建 Fiber 节点
+beginWork(fiber) - 开始处理 Fiber 节点的工作
+completeWork(fiber) - 完成 Fiber 节点的工作
 
-### 3. 调度器（Scheduler）
-- 任务优先级
-- 时间切片
-- 可中断渲染
+调度器（Scheduler）相关函数：
+scheduleWork(fiber, priority) - 调度工作单元
+shouldYield() - 检查是否需要让出执行权
+workLoop(deadline) - 工作循环的实现
 
-### 4. 协调器（Reconciler）
-- Diff 算法
-- 节点更新
-- 副作用收集
+协调器（Reconciler）相关函数：
+reconcileChildren(fiber, elements) - 协调子节点
+diffProperties(domElement, oldProps, newProps) - 属性差异比较
+commitWork(fiber) - 提交变更到真实 DOM
 
 ### 5. Hooks 实现
 - useState
@@ -54,6 +54,16 @@ mini-react/
 - useRef
 - useMemo
 - useCallback
+
+
+fiber.js（待实现）:
+createFiber(type, props, key) - 创建 Fiber 节点
+cloneFiber(current, pendingProps) - 克隆 Fiber 节点
+scheduler.js（待实现）:
+scheduleWork(fiber) - 调度工作
+workLoop(deadline) - 工作循环
+performUnitOfWork(fiber) - 执行工作单元
+
 
 ## 开发指南
 
