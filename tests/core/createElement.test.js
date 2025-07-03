@@ -1,4 +1,4 @@
-const { createElement, createTextElement } = require('../src/core/createElement');
+const { createElement, createTextElement } = require('../../src/core/createElement');
 
 describe('createElement', () => {
   test('should create a div element with no props or children', () => {

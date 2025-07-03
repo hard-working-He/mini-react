@@ -22,7 +22,11 @@ mini-react/
 │   │   └── scheduler.js
 │   └── index.js        # 入口文件
 ├── examples/           # 示例代码
-├── tests/             # 测试用例
+├──  tests/
+│   ├── core/           # 核心模块测试
+│   │   └── createElement.test.js
+│   └── runtime/        # 运行时模块测试
+│       └── fiber.test.js
 └── package.json
 ```
 
@@ -84,14 +88,15 @@ npm run dev
 ```
 
 ### 测试
-运行单元测试：
-```bash
-npm test
-```
 
-运行特定测试：
-```bash
-npm test -- -t "test name"
+# 运行所有测试
+npm test
+
+# 只运行核心模块测试
+npm test tests/core
+
+# 只运行运行时模块测试
+npm test tests/runtime
 ```
 
 ## 实现步骤
