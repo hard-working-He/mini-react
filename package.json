@@ -1,0 +1,22 @@
+{
+  "name": "mini-react",
+  "version": "1.0.0",
+  "description": "A minimal React implementation",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "babel-node src/index.js"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.22.0",
+    "@babel/node": "^7.22.0",
+    "@babel/preset-react": "^7.22.0"
+  },
+  "directories": {
+    "example": "examples",
+    "test": "tests"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
