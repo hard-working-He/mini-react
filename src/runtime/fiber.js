@@ -10,6 +10,10 @@ import {
   shouldYield 
 } from './scheduler.js';
 
+import {
+  reconcileChildren
+} from '../core/reconciler.js';
+
 // fiber.js - Fiber 节点操作相关函数
 
 /**
@@ -134,70 +138,6 @@ function completeWork(fiber) {
   return null;
 }
 
-/**
- * 协调子节点（创建或更新子 Fiber 节点）
- * 它是 React 的 diff 算法入口
-
- * 接收三个参数：
- * 旧的 Fiber 树（current）
- * 新的虚拟 DOM（newChildren）
- * 渲染优先级（renderLanes）
-
- * 通过对比旧 Fiber 和新虚拟 DOM，决定：
- * 复用哪些 Fiber
- * 创建哪些新的 Fiber
- * 标记删除哪些 Fiber
- * 最终构建出本次更新后完整的 Fiber 树
- * @param {Object} fiber - 父 Fiber 节点
- * @param {Array} children - 子节点数组
- */
-function reconcileChildren(fiber, children) {
-  let oldFiber = fiber.alternate?.child;
-  let prevSibling = null;
-  let index = 0;
-
-  while (index < children.length || oldFiber) {
-    const child = children[index];
-    let newFiber = null;
-
-    // 比较新旧节点，决定如何更新
-    const sameType = oldFiber && child && child.type === oldFiber.type;
-
-    if (sameType) {
-      // 更新节点
-      newFiber = createFiber(child, fiber);
-      newFiber.dom = oldFiber.dom;
-      newFiber.alternate = oldFiber;
-      newFiber.effectTag = 'UPDATE';
-    } else {
-      if (child) {
-        // 创建新节点
-        newFiber = createFiber(child, fiber);
-        newFiber.effectTag = 'PLACEMENT';
-      }
-      if (oldFiber) {
-        // 删除旧节点
-        oldFiber.effectTag = 'DELETION';
-        // 将旧节点加入删除队列
-        deletions.push(oldFiber);
-      }
-    }
-
-    if (oldFiber) {
-      oldFiber = oldFiber.sibling;
-    }
-
-    // 设置 fiber 树的连接关系
-    if (index === 0) {
-      fiber.child = newFiber;
-    } else if (prevSibling && newFiber) {
-      prevSibling.sibling = newFiber;
-    }
-
-    prevSibling = newFiber;
-    index++;
-  }
-}
 
 // 用于跟踪需要删除的节点
 const deletions = [];
